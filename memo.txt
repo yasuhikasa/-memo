@@ -1,2 +1,39 @@
-memo
-1・２１
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/router";
+import { useDispatch } from "react-redux";
+import { clearInquiryData } from "@/store/inquiry/actions";
+
+export default function useInquiryCleanup() {
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const prevPathRef = useRef(router.asPath);
+  const shouldClearRef = useRef(false);
+
+  useEffect(() => {
+    const isInquiry = (p: string) => p.startsWith("/inquiry");
+
+    const handleBeforeHistoryChange = (nextUrl: string) => {
+      const prev = prevPathRef.current;
+      if (isInquiry(prev) && !isInquiry(nextUrl)) {
+        shouldClearRef.current = true; // 外へ出るフラグ
+      }
+      prevPathRef.current = nextUrl; // 次の比較用に更新
+    };
+
+    const handleRouteChangeComplete = () => {
+      if (shouldClearRef.current) {
+        // ページ切り替わり後に実行 → チラつき無し
+        dispatch(clearInquiryData());
+        shouldClearRef.current = false;
+      }
+    };
+
+    router.events.on("beforeHistoryChange", handleBeforeHistoryChange);
+    router.events.on("routeChangeComplete", handleRouteChangeComplete);
+
+    return () => {
+      router.events.off("beforeHistoryChange", handleBeforeHistoryChange);
+      router.events.off("routeChangeComplete", handleRouteChangeComplete);
+    };
+  }, [router, dispatch]);
+}
