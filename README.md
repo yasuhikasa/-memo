@@ -1,4 +1,4 @@
-# memo
+# 日笠泰彰memo
 
 @ext:genieai.chatgpt-vscode genieai.
 
